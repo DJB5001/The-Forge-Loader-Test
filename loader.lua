@@ -14,11 +14,11 @@ local FILE = "loader.lua"
 -- Token split into parts (to avoid detection)
 local function getToken()
     local parts = {
-        "Z2l0aHViX3BhdF8xMUJJMlA0S0Ew",
-        "RW9WOGh4Y2NiT1RHX2FYVjF0QTI3Q2I2",
-        "Rnh3OFU1enRoNFc3UkVOY2hBbG93",
-        "R05ZS3I4SENCY2JqRFBaUUE1TVFl",
-        "NmR6d0JIZA=="
+        "Z2l0aHViX3BhdF8xMUJJMlA0",
+        "S0EwdFAyUVJaR0oxamtQXzll",
+        "YVRKZVFBM1Y2WUVTWEg3Sm5z",
+        "R1IxTHRVWEZ0cHZhWW9QV1dV",
+        "RGNMSkFKV1ZNVkFXVHdCZEQzVEJ2"
     }
     
     local encoded = table.concat(parts, "")
