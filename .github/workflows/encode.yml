@@ -14,7 +14,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
           
       - name: Fetch and encode script
         env:
@@ -38,15 +38,15 @@ jobs:
           echo "Encoded successfully"
           echo "Encoded size: $(wc -c < encoded.txt) bytes"
           
-      - name: Commit encoded file
+      - name: Commit and push
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git add encoded.txt
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Update encoded script [$(date)]"
-            git push
+            git commit -m "Update encoded script"
+            git push origin main
             echo "Pushed successfully"
           fi
