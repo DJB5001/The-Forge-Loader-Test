@@ -14,7 +14,7 @@ print("[THE FORGE] Starting loader...")
 -- YOUR GITHUB PERSONAL ACCESS TOKEN HERE!
 -- How to get: GitHub -> Settings -> Developer Settings -> Personal Access Tokens -> Generate New Token
 -- Required scope: repo (read access)
-local GITHUB_TOKEN = "YOUR_TOKEN_HERE"  -- Replace with your token!
+local GITHUB_TOKEN = "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"  -- Replace with your token!
 
 local REPO_OWNER = "DJB5001"
 local REPO_NAME = "The-Forge"
