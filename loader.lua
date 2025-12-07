@@ -1,4 +1,4 @@
--- The Forge Loader (Private Repo Support)
+-- The Forge Multi-File Loader
 print("[THE FORGE] Loading...")
 
 -- Base64 decoder
@@ -18,28 +18,75 @@ local function base64Decode(data)
     end))
 end
 
--- Fetch encoded script
-local success, encoded = pcall(function()
-    return game:HttpGet("https://raw.githubusercontent.com/DJB5001/The-Forge-Loader/main/encoded.txt?" .. tick(), true)
-end)
+-- Cache for loaded modules
+local LoadedModules = {}
 
-if not success or not encoded then
-    warn("[THE FORGE] Failed to fetch encoded script")
-    warn(encoded)
-    return
+-- Load module from encoded file
+local function loadModule(filename)
+    if LoadedModules[filename] then
+        return LoadedModules[filename]
+    end
+    
+    local url = string.format(
+        "https://raw.githubusercontent.com/DJB5001/The-Forge-Loader/main/encoded/%s.b64?%d",
+        filename,
+        tick()
+    )
+    
+    local success, encoded = pcall(function()
+        return game:HttpGet(url, true)
+    end)
+    
+    if not success or not encoded or encoded == "" then
+        warn("[THE FORGE] Failed to fetch:", filename)
+        return nil
+    end
+    
+    local decoded = base64Decode(encoded)
+    
+    if not decoded or #decoded == 0 then
+        warn("[THE FORGE] Decode failed:", filename)
+        return nil
+    end
+    
+    local ok, chunk = pcall(loadstring, decoded)
+    if not ok or not chunk then
+        warn("[THE FORGE] Compile failed:", filename)
+        return nil
+    end
+    
+    local ok2, module = pcall(chunk)
+    if not ok2 then
+        warn("[THE FORGE] Execute failed:", filename)
+        return nil
+    end
+    
+    LoadedModules[filename] = module
+    return module
 end
 
 print("[THE FORGE] Decoding...")
-local decoded = base64Decode(encoded)
 
-if not decoded or #decoded == 0 then
-    warn("[THE FORGE] Decode failed")
+-- Load main loader script
+local mainLoader = loadModule("loader.lua")
+
+if not mainLoader then
+    warn("[THE FORGE] Failed to load main script")
     return
 end
 
 print("[THE FORGE] Executing...")
+
+-- Execute with module loader available globally
+_G.DJLoadModule = loadModule
+
 local ok, err = pcall(function()
-    loadstring(decoded)()
+    if type(mainLoader) == "function" then
+        mainLoader()
+    else
+        -- If it's not a function, just execute the loaded code
+        loadstring(mainLoader)()
+    end
 end)
 
 if not ok then
