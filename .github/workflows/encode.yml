@@ -1,4 +1,4 @@
-name: Encode Private Script
+name: Encode Private Scripts
 
 on:
   workflow_dispatch:
@@ -16,37 +16,65 @@ jobs:
         with:
           persist-credentials: true
           
-      - name: Fetch and encode script
+      - name: Fetch and encode all scripts
         env:
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
         run: |
           set -e
-          echo "Fetching script..."
+          echo "Fetching scripts from private repo..."
           
-          # Fetch from private repo
-          curl -f -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github.v3.raw" \
-            "https://api.github.com/repos/DJB5001/The-Forge-Test/contents/loader.lua?ref=main" \
-            -o script.lua
+          # Create encoded directory
+          mkdir -p encoded
           
-          echo "Script fetched successfully"
-          echo "File size: $(wc -c < script.lua) bytes"
+          # List of files to encode
+          FILES=(
+            "loader.lua"
+            "dj_utils.lua"
+            "dj_ui_base.lua"
+            "dj_overlay.lua"
+            "main.lua"
+            "dj_tab_monster.lua"
+            "dj_tab_mining.lua"
+            "dj_tab_extras.lua"
+            "dj_tab_ingame.lua"
+            "dj_tab_misc.lua"
+            "dj_tab_key.lua"
+          )
           
-          # Encode to base64
-          base64 -w 0 script.lua > encoded.txt
+          # Fetch and encode each file
+          for FILE in "${FILES[@]}"; do
+            echo "Processing $FILE..."
+            
+            # Fetch from private repo
+            if curl -f -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github.v3.raw" \
+              "https://api.github.com/repos/DJB5001/The-Forge-Test/contents/$FILE?ref=main" \
+              -o "temp_$FILE" 2>/dev/null; then
+              
+              # Encode to base64
+              base64 -w 0 "temp_$FILE" > "encoded/${FILE}.b64"
+              echo "  ✅ $FILE encoded ($(wc -c < "temp_$FILE") bytes)"
+              rm "temp_$FILE"
+            else
+              echo "  ⚠️  $FILE not found or failed"
+            fi
+          done
           
-          echo "Encoded successfully"
-          echo "Encoded size: $(wc -c < encoded.txt) bytes"
+          # Create index file
+          echo "Creating index..."
+          ls -1 encoded/ > encoded/index.txt
+          
+          echo "Encoding complete!"
           
       - name: Commit and push
         run: |
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git add encoded.txt
+          git add encoded/
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Update encoded script"
+            git commit -m "Update encoded scripts [$(date '+%Y-%m-%d %H:%M:%S')]"
             git push origin main
             echo "Pushed successfully"
           fi
