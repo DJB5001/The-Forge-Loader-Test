@@ -52,13 +52,14 @@ local function loadModule(filename)
     local ok, chunk = pcall(loadstring, decoded)
     if not ok or not chunk then
         warn("[THE FORGE] Compile failed:", filename)
+        warn("Error:", tostring(chunk))
         return nil
     end
     
     local ok2, module = pcall(chunk)
     if not ok2 then
         warn("[THE FORGE] Execute failed:", filename)
-        warn("Error:", module)
+        warn("Error:", tostring(module))
         return nil
     end
     
@@ -83,8 +84,11 @@ end)
 
 if not success or not encoded or encoded == "" then
     warn("[THE FORGE] Failed to load main script")
+    warn("Error:", tostring(encoded))
     return
 end
+
+print("[THE FORGE] Downloaded:", #encoded, "bytes (base64)")
 
 local decoded = base64Decode(encoded)
 
@@ -93,13 +97,20 @@ if not decoded or #decoded == 0 then
     return
 end
 
+print("[THE FORGE] Decoded:", #decoded, "bytes")
+
 print("[THE FORGE] Executing...")
 
-local ok, err = pcall(function()
-    loadstring(decoded)()
-end)
+local ok, chunk = pcall(loadstring, decoded)
+if not ok or not chunk then
+    warn("[THE FORGE] Compile failed!")
+    warn("Error:", tostring(chunk))
+    return
+end
 
-if not ok then
+local ok2, err = pcall(chunk)
+
+if not ok2 then
     warn("[THE FORGE] Error:")
     warn(err)
 else
