@@ -3,13 +3,16 @@ name: Encode Private Script
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/30 * * * *'  # Every 30 minutes
+    - cron: '*/30 * * * *'
 
 jobs:
   encode:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           
@@ -17,18 +20,33 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
         run: |
+          set -e
+          echo "Fetching script..."
+          
           # Fetch from private repo
-          SCRIPT=$(curl -H "Authorization: token $GH_TOKEN" \
+          curl -f -H "Authorization: Bearer $GH_TOKEN" \
             -H "Accept: application/vnd.github.v3.raw" \
-            "https://api.github.com/repos/DJB5001/The-Forge-Test/contents/loader.lua?ref=main")
+            "https://api.github.com/repos/DJB5001/The-Forge-Test/contents/loader.lua?ref=main" \
+            -o script.lua
+          
+          echo "Script fetched successfully"
+          echo "File size: $(wc -c < script.lua) bytes"
           
           # Encode to base64
-          echo "$SCRIPT" | base64 -w 0 > encoded.txt
+          base64 -w 0 script.lua > encoded.txt
+          
+          echo "Encoded successfully"
+          echo "Encoded size: $(wc -c < encoded.txt) bytes"
           
       - name: Commit encoded file
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add encoded.txt
-          git diff --quiet && git diff --staged --quiet || git commit -m "Update encoded script"
-          git push
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update encoded script [$(date)]"
+            git push
+            echo "Pushed successfully"
+          fi
