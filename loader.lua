@@ -58,6 +58,7 @@ local function loadModule(filename)
     local ok2, module = pcall(chunk)
     if not ok2 then
         warn("[THE FORGE] Execute failed:", filename)
+        warn("Error:", module)
         return nil
     end
     
@@ -67,26 +68,35 @@ end
 
 print("[THE FORGE] Decoding...")
 
--- Load main loader script
-local mainLoader = loadModule("loader.lua")
+-- Expose module loader globally FIRST
+_G.DJLoadModule = loadModule
 
-if not mainLoader then
+-- Load and execute main loader script
+local url = string.format(
+    "https://raw.githubusercontent.com/DJB5001/The-Forge-Loader/main/encoded/loader.lua.b64?%d",
+    tick()
+)
+
+local success, encoded = pcall(function()
+    return game:HttpGet(url, true)
+end)
+
+if not success or not encoded or encoded == "" then
     warn("[THE FORGE] Failed to load main script")
+    return
+end
+
+local decoded = base64Decode(encoded)
+
+if not decoded or #decoded == 0 then
+    warn("[THE FORGE] Decode failed")
     return
 end
 
 print("[THE FORGE] Executing...")
 
--- Execute with module loader available globally
-_G.DJLoadModule = loadModule
-
 local ok, err = pcall(function()
-    if type(mainLoader) == "function" then
-        mainLoader()
-    else
-        -- If it's not a function, just execute the loaded code
-        loadstring(mainLoader)()
-    end
+    loadstring(decoded)()
 end)
 
 if not ok then
