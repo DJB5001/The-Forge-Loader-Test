@@ -28,7 +28,7 @@ local function loadModule(filename)
     end
     
     local url = string.format(
-        "https://raw.githubusercontent.com/DJB5001/The-Forge-Loader/main/encoded/%s.b64?%d",
+        "https://raw.githubusercontent.com/DJB5001/The-Forge-Loader-Test/main/encoded/%s.b64?%d",
         filename,
         tick()
     )
@@ -74,7 +74,7 @@ _G.DJLoadModule = loadModule
 
 -- Load and execute main loader script
 local url = string.format(
-    "https://raw.githubusercontent.com/DJB5001/The-Forge-Loader/main/encoded/loader.lua.b64?%d",
+    "https://raw.githubusercontent.com/DJB5001/The-Forge-Loader-Test/main/encoded/loader.lua.b64?%d",
     tick()
 )
 
