@@ -4,8 +4,8 @@
 -- Author: DJB5001
 -- Discord: discord.gg/MTXnFfHXW9
 
-local GAME_NAME = "The Forge"
-local VERSION = "1.0.0-TEST"
+local GAME_NAME = "The Forge TEST"
+local VERSION = "1.0.0"
 
 -- Multiple game IDs (main game + subplaces)
 local ALLOWED_GAME_IDS = {
@@ -56,7 +56,7 @@ local function base64Decode(data)
     data = string.gsub(data, '[^'..b..'=]', '')
     return (data:gsub('.', function(x)
         if (x == '=') then return '' end
-        local r,f='',( b:find(x)-1)
+        local r,f='',(b:find(x)-1)
         for i=6,1,-1 do r=r..(f%2^i-f%2^(i-1)>0 and '1' or '0') end
         return r;
     end):gsub('%d%d%d?%d?%d?%d?%d?%d?', function(x)
@@ -185,12 +185,10 @@ _G.__DJ_Subscribe = function(fn) table.insert(subscribers, fn) end
 _G.__DJ_Notify = function(evt) for _, fn in ipairs(subscribers) do pcall(fn, evt) end end
 
 -- ================================================================
--- LOAD MODULES - HYBRID APPROACH
+-- LOAD ENCODED MODULES FROM PUBLIC REPO
 -- ================================================================
--- Encoded modules from Loader-Test repo
 local REPO_BASE = "https://raw.githubusercontent.com/DJB5001/The-Forge-Loader-Test/main/encoded/"
--- Direct modules from Test repo (for tabs)
-local TEST_REPO = "https://raw.githubusercontent.com/DJB5001/The-Forge-Test/main/"
+local TEST_DIRECT = "https://raw.githubusercontent.com/DJB5001/The-Forge-Test/main/"
 
 local function httpGet(url)
     local ok, res = pcall(function() return game:HttpGet(url, true) end)
@@ -245,32 +243,27 @@ local function loadEncodedModule(name)
     return module
 end
 
--- Load direct (unencoded) from Test repo
-local function loadDirectModule(name)
-    print("[DJ HUB TEST] 📥 Loading " .. name .. " (direct)...")
-    
-    local url = TEST_REPO .. name .. "?" .. tick()
+-- Load directly from Test repo (no encoding)
+local function loadDirectModule(filename)
+    print("[DJ HUB TEST] 📥 Loading " .. filename .. " (direct)...")
+    local url = TEST_DIRECT .. filename .. "?" .. tick()
     local code = httpGet(url)
-    if not code or code == "" then 
-        warn("[DJ HUB TEST] ❌ Failed to download " .. name)
+    if not code or code == "" then
+        warn("[DJ HUB TEST] ❌ Failed to fetch " .. filename)
         return nil
     end
-    
-    print("[DJ HUB TEST] 📦 Downloaded: " .. #code .. " bytes")
-    
+    print("[DJ HUB TEST] 📦 Downloaded " .. #code .. " bytes")
     local ok, chunk = pcall(loadstring, code)
-    if not ok or not chunk then 
-        warn("[DJ HUB TEST] ❌ Compile error: " .. tostring(chunk))
+    if not ok or not chunk then
+        warn("[DJ HUB TEST] ❌ Compile failed: " .. tostring(chunk))
         return nil
     end
-    
     local ok2, module = pcall(chunk)
-    if not ok2 then 
-        warn("[DJ HUB TEST] ❌ Execute error: " .. tostring(module))
+    if not ok2 then
+        warn("[DJ HUB TEST] ❌ Execute failed: " .. tostring(module))
         return nil
     end
-    
-    print("[DJ HUB TEST] ✅ " .. name .. " loaded")
+    print("[DJ HUB TEST] ✅ " .. filename .. " loaded")
     return module
 end
 
@@ -312,38 +305,26 @@ local function onKeyVerified()
     
     print("[DJ HUB TEST] Loading main tabs...")
     
-    -- Load encoded tabs from Loader-Test
-    local encodedTabs = {
-        {"main.lua", "Home"},
-        {"dj_tab_ingame.lua", "Ingame"},
-        {"dj_tab_key.lua", "Key"},
-        {"dj_tab_extras.lua", "Extras"},
-        {"dj_tab_misc.lua", "Misc"}
+    local tabs = {
+        {"main.lua", "Home", true},
+        {"dj_tab_ingame.lua", "Ingame", true},
+        {"dj_tab_mining.lua", "Mining", false}, -- Direct from Test repo
+        {"dj_tab_monster.lua", "Monster Farm", false}, -- Direct from Test repo  
+        {"dj_tab_minigame.lua", "Minigame", false}, -- Direct from Test repo
+        {"dj_tab_extras.lua", "Extras", true},
+        {"dj_tab_misc.lua", "Misc", true}
     }
     
-    -- Load DIRECT tabs from Test repo (Mining, Monster, Minigame)
-    local directTabs = {
-        {"dj_tab_mining.lua", "Mining"},
-        {"dj_tab_monster.lua", "Monster Farm"},
-        {"dj_tab_minigame.lua", "Minigame"}
-    }
-    
-    for _, tab in ipairs(encodedTabs) do
-        if tab[1] ~= "dj_tab_key.lua" then -- Skip key tab (already loaded)
-            local buildTab = loadEncodedModule(tab[1])
-            if buildTab then
-                local ok, err = pcall(buildTab, Window, Rayfield, Utils)
-                if ok then
-                    print("[DJ HUB TEST] ✅ " .. tab[2] .. " tab loaded")
-                else
-                    warn("[DJ HUB TEST] ❌ " .. tab[2] .. " tab error:", tostring(err))
-                end
-            end
+    for _, tab in ipairs(tabs) do
+        local buildTab
+        if tab[3] then
+            -- Load encoded
+            buildTab = loadEncodedModule(tab[1])
+        else
+            -- Load direct
+            buildTab = loadDirectModule(tab[1])
         end
-    end
-    
-    for _, tab in ipairs(directTabs) do
-        local buildTab = loadDirectModule(tab[1])
+        
         if buildTab then
             local ok, err = pcall(buildTab, Window, Rayfield, Utils)
             if ok then
