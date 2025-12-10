@@ -188,7 +188,6 @@ _G.__DJ_Notify = function(evt) for _, fn in ipairs(subscribers) do pcall(fn, evt
 -- LOAD ENCODED MODULES FROM PUBLIC REPO
 -- ================================================================
 local REPO_BASE = "https://raw.githubusercontent.com/DJB5001/The-Forge-Loader-Test/main/encoded/"
-local TEST_DIRECT = "https://raw.githubusercontent.com/DJB5001/The-Forge-Test/main/"
 
 local function httpGet(url)
     local ok, res = pcall(function() return game:HttpGet(url, true) end)
@@ -243,30 +242,6 @@ local function loadEncodedModule(name)
     return module
 end
 
--- Load directly from Test repo (no encoding)
-local function loadDirectModule(filename)
-    print("[DJ HUB TEST] 📥 Loading " .. filename .. " (direct)...")
-    local url = TEST_DIRECT .. filename .. "?" .. tick()
-    local code = httpGet(url)
-    if not code or code == "" then
-        warn("[DJ HUB TEST] ❌ Failed to fetch " .. filename)
-        return nil
-    end
-    print("[DJ HUB TEST] 📦 Downloaded " .. #code .. " bytes")
-    local ok, chunk = pcall(loadstring, code)
-    if not ok or not chunk then
-        warn("[DJ HUB TEST] ❌ Compile failed: " .. tostring(chunk))
-        return nil
-    end
-    local ok2, module = pcall(chunk)
-    if not ok2 then
-        warn("[DJ HUB TEST] ❌ Execute failed: " .. tostring(module))
-        return nil
-    end
-    print("[DJ HUB TEST] ✅ " .. filename .. " loaded")
-    return module
-end
-
 print("[DJ HUB TEST] Loading The Forge Script...")
 
 local Utils = loadEncodedModule("dj_utils.lua")
@@ -306,25 +281,17 @@ local function onKeyVerified()
     print("[DJ HUB TEST] Loading main tabs...")
     
     local tabs = {
-        {"main.lua", "Home", true},
-        {"dj_tab_ingame.lua", "Ingame", true},
-        {"dj_tab_mining.lua", "Mining", false}, -- Direct from Test repo
-        {"dj_tab_monster.lua", "Monster Farm", false}, -- Direct from Test repo  
-        {"dj_tab_minigame.lua", "Minigame", false}, -- Direct from Test repo
-        {"dj_tab_extras.lua", "Extras", true},
-        {"dj_tab_misc.lua", "Misc", true}
+        {"main.lua", "Home"},
+        {"dj_tab_ingame.lua", "Ingame"},
+        {"dj_tab_mining.lua", "Mining"},
+        {"dj_tab_monster.lua", "Monster Farm"},
+        {"dj_tab_minigame.lua", "Minigame"},
+        {"dj_tab_extras.lua", "Extras"},
+        {"dj_tab_misc.lua", "Misc"}
     }
     
     for _, tab in ipairs(tabs) do
-        local buildTab
-        if tab[3] then
-            -- Load encoded
-            buildTab = loadEncodedModule(tab[1])
-        else
-            -- Load direct
-            buildTab = loadDirectModule(tab[1])
-        end
-        
+        local buildTab = loadEncodedModule(tab[1])
         if buildTab then
             local ok, err = pcall(buildTab, Window, Rayfield, Utils)
             if ok then
