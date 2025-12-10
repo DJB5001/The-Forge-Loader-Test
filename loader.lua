@@ -1,118 +1,97 @@
--- The Forge Multi-File Loader
-print("[THE FORGE] Loading...")
-
--- Base64 decoder
-local b64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
-local function base64Decode(data)
-    data = string.gsub(data, '[^'..b64chars..'=]', '')
-    return (data:gsub('.', function(x)
-        if (x == '=') then return '' end
-        local r,f='',(b64chars:find(x)-1)
-        for i=6,1,-1 do r=r..(f%2^i-f%2^(i-1)>0 and '1' or '0') end
-        return r;
-    end):gsub('%d%d%d?%d?%d?%d?%d?%d?', function(x)
-        if (#x ~= 8) then return '' end
-        local c=0
-        for i=1,8 do c=c+(x:sub(i,i)=='1' and 2^(8-i) or 0) end
-        return string.char(c)
-    end))
-end
+-- The Forge Multi-File Loader (TEST VERSION)
+print("[THE FORGE TEST] Loading from Test Repository...")
 
 -- Cache for loaded modules
 local LoadedModules = {}
 
--- Load module from encoded file
+-- Load module DIRECTLY from The-Forge-Test repo (no encoding)
 local function loadModule(filename)
     if LoadedModules[filename] then
+        print("[THE FORGE TEST] 👍 Using cached:", filename)
         return LoadedModules[filename]
     end
     
+    print("[THE FORGE TEST] 📥 Loading:", filename)
+    
     local url = string.format(
-        "https://raw.githubusercontent.com/DJB5001/The-Forge-Loader-Test/main/encoded/%s.b64?%d",
+        "https://raw.githubusercontent.com/DJB5001/The-Forge-Test/main/%s?%d",
         filename,
         tick()
     )
     
-    local success, encoded = pcall(function()
+    local success, code = pcall(function()
         return game:HttpGet(url, true)
     end)
     
-    if not success or not encoded or encoded == "" then
-        warn("[THE FORGE] Failed to fetch:", filename)
+    if not success or not code or code == "" then
+        warn("[THE FORGE TEST] ❌ Failed to fetch:", filename)
+        warn("Error:", tostring(code))
         return nil
     end
     
-    local decoded = base64Decode(encoded)
+    print("[THE FORGE TEST] 📦 Downloaded:", filename, "(", #code, "bytes)")
     
-    if not decoded or #decoded == 0 then
-        warn("[THE FORGE] Decode failed:", filename)
-        return nil
-    end
-    
-    local ok, chunk = pcall(loadstring, decoded)
+    local ok, chunk = pcall(loadstring, code)
     if not ok or not chunk then
-        warn("[THE FORGE] Compile failed:", filename)
+        warn("[THE FORGE TEST] ❌ Compile failed:", filename)
         warn("Error:", tostring(chunk))
         return nil
     end
     
+    print("[THE FORGE TEST] 🔧 Compiled:", filename)
+    
     local ok2, module = pcall(chunk)
     if not ok2 then
-        warn("[THE FORGE] Execute failed:", filename)
+        warn("[THE FORGE TEST] ❌ Execute failed:", filename)
         warn("Error:", tostring(module))
         return nil
     end
+    
+    print("[THE FORGE TEST] ✅", filename, "loaded successfully")
     
     LoadedModules[filename] = module
     return module
 end
 
-print("[THE FORGE] Decoding...")
+print("[THE FORGE TEST] Exposing module loader...")
 
 -- Expose module loader globally FIRST
 _G.DJLoadModule = loadModule
 
--- Load and execute main loader script
+print("[THE FORGE TEST] Loading main script...")
+
+-- Load main loader.lua directly
 local url = string.format(
-    "https://raw.githubusercontent.com/DJB5001/The-Forge-Loader-Test/main/encoded/loader.lua.b64?%d",
+    "https://raw.githubusercontent.com/DJB5001/The-Forge-Test/main/loader.lua?%d",
     tick()
 )
 
-local success, encoded = pcall(function()
+local success, code = pcall(function()
     return game:HttpGet(url, true)
 end)
 
-if not success or not encoded or encoded == "" then
-    warn("[THE FORGE] Failed to load main script")
-    warn("Error:", tostring(encoded))
+if not success or not code or code == "" then
+    warn("[THE FORGE TEST] Failed to load main script")
+    warn("Error:", tostring(code))
     return
 end
 
-print("[THE FORGE] Downloaded:", #encoded, "bytes (base64)")
+print("[THE FORGE TEST] Downloaded loader.lua:", #code, "bytes")
 
-local decoded = base64Decode(encoded)
-
-if not decoded or #decoded == 0 then
-    warn("[THE FORGE] Decode failed")
-    return
-end
-
-print("[THE FORGE] Decoded:", #decoded, "bytes")
-
-print("[THE FORGE] Executing...")
-
-local ok, chunk = pcall(loadstring, decoded)
+local ok, chunk = pcall(loadstring, code)
 if not ok or not chunk then
-    warn("[THE FORGE] Compile failed!")
+    warn("[THE FORGE TEST] Compile failed!")
     warn("Error:", tostring(chunk))
     return
 end
 
+print("[THE FORGE TEST] Executing main loader...")
+
 local ok2, err = pcall(chunk)
 
 if not ok2 then
-    warn("[THE FORGE] Error:")
+    warn("[THE FORGE TEST] Error:")
     warn(err)
 else
-    print("[THE FORGE] ✅ Success!")
+    print("[THE FORGE TEST] ✅ Success!")
 end
