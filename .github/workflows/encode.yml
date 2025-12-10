@@ -39,6 +39,7 @@ jobs:
             "dj_tab_ingame.lua"
             "dj_tab_misc.lua"
             "dj_tab_key.lua"
+            "dj_tab_minigame.lua"
           )
           
           # Fetch and encode each file
