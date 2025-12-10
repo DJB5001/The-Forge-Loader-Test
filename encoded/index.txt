@@ -2,6 +2,7 @@ dj_overlay.lua.b64
 dj_tab_extras.lua.b64
 dj_tab_ingame.lua.b64
 dj_tab_key.lua.b64
+dj_tab_minigame.lua.b64
 dj_tab_mining.lua.b64
 dj_tab_misc.lua.b64
 dj_tab_monster.lua.b64
